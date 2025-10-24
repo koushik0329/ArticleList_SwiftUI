@@ -5,13 +5,13 @@
 //  Created by Koushik Reddy Kambham on 10/11/25.
 //
 
-import UIKit
-import Combine
+import SwiftUI
 
-class NewsViewModel: ObservableObject {
+@Observable
+class NewsViewModel {
 
     //made it as published
-    @Published var news : [News] = []
+    var news : [News] = []
     let networkObj : Network
     
     var onUpdate: (() -> Void)?

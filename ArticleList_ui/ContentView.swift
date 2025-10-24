@@ -8,13 +8,11 @@
 import SwiftUI
 
 struct ContentView: View {
-    @ObservedObject var newsViewModel : NewsViewModel
+    var newsViewModel : NewsViewModel
     
     init(newsViewModel: NewsViewModel) {
         self.newsViewModel = newsViewModel
     }
-    
-    let sampleList = Array(repeating: "Sample", count: 10)
     
     var body : some View {
         
@@ -27,7 +25,8 @@ struct ContentView: View {
                     title: article.author ?? "",
                     description: article.description ?? "",
                     imageTitle: article.urlToImage ?? "",
-                    dateLabel: article.publishedAt ?? ""
+                    dateLabel: article.publishedAt ?? "",
+                    imageLoader: ImageLoader()
                 )
             }
         }
@@ -47,6 +46,21 @@ struct RowView : View {
     var description : String?
     var imageTitle : String?
     var dateLabel : String?
+    @ObservedObject private var imageLoader : ImageLoader
+    
+    init(
+        title: String?,
+        description: String?,
+        imageTitle: String?,
+        dateLabel: String?,
+        imageLoader: ImageLoader
+    ) {
+        self.title = title
+        self.description = description
+        self.imageTitle = imageTitle
+        self.dateLabel = dateLabel
+        self.imageLoader = imageLoader
+    }
     
     var body : some View {
         HStack {
@@ -71,12 +85,29 @@ struct RowView : View {
             }
             
             Spacer()
+    
             
-            Image(imageTitle ?? "")
+            if let image = imageLoader.image {
+                Image(uiImage: image)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 100, height: 100)
+                .frame(width: .infinity, height: .infinity)
+            }
         }
+        .task {
+            if let urlString = imageTitle {
+                await imageLoader.loadImage(from: urlString)
+            }
+        }
+    }
+}
+
+class ImageLoader: ObservableObject {
+    @Published var image: UIImage?
+
+    func loadImage(from urlString: String) async {
+        let viewModel = NewsViewModel(networkObj: NetworkManager.shared)
+        image = await viewModel.loadImage(from: urlString)
     }
 }
 
